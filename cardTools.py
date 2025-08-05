@@ -16,12 +16,29 @@ class Deck:
         return self.cards
 
     def deal_cards(self, num=1):
+        """Deals the top cards from the deck.
+
+        For decks that have been shuffled, used to simulate a dealer.
+
+        :param num: Number of cards to be dealt.
+        :return: The cards that were dealt.
+        """
         c = self.cards[0:num]
         self.dealt.extend(c)
         self.cards = self.cards[num:]
         return c
 
     def log_dealt(self, ret=False, dealt_in=None):
+        """Logs what cards have been dealt from the deck.
+
+        Either takes in cards as list or prompts user to input what cards have been dealt.
+        Then extends the deck's dealt list and removes the cards from the deck.
+
+        :param ret: If True, returns the cards that have been dealt.
+                Useful for simultaneously removing cards from deck and dealing to hand.
+        :param dealt_in: Optional list of cards, alternative to loading in manually.
+        :return: If ret=True, returns the cards that were dealt.
+        """
         dealt = dealt_in if dealt_in is not None else card_loader()
         for card in dealt:
             if card in self.cards:
@@ -33,7 +50,7 @@ class Deck:
         if ret:
             return dealt
 
-    def summary(self, ace='num'):
+    def summary(self, ace_hi=False, face_num=False):
         """
         Returns the color makeup, suit makeup, and numeric values of the deck.
         :return: col_dict, suit_dict, vals
@@ -46,7 +63,7 @@ class Deck:
         suit_dict = {'Spades': suits.count('Spades'), 'Diamonds': suits.count('Diamonds'),
                      'Clubs': suits.count('Clubs'), 'Hearts': suits.count('Hearts')}
         # Values
-        vals = card_value(self.show_deck(), ace=ace)
+        vals = card_value(self.show_deck(), ace_hi=ace_hi, face_num=face_num)
         return col_dict, suit_dict, vals
 
 
@@ -58,10 +75,9 @@ class Hand:
         return self.cards
 
     def sort_hand(self, ace_hi=False):
-        """
-        value_order = ['A', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K']
-        order_dict = {value: index for index, value in enumerate(value_order)}
-        self.cards.sort(key=lambda card: order_dict[card[0]])
+        """Sorts the hand's cards in place.
+
+        :param ace_hi: If True, ace is higher than king. If False, ace is lower than 2.
         """
         self.cards = sort_cards(self.show_hand(), ace_hi=ace_hi)
 
@@ -70,15 +86,25 @@ class Hand:
         return [card_name([card])[0]+' '+card_suit([card])[0] for card in self.show_hand()]
 
     def add_cards(self, newcards):
+        """Adds cards to the hand.
+
+        Takes in a list of cards and extends the hand's cards.
+
+        :param newcards: List of cards to be dealt into the hand.
+        """
         self.cards.extend(newcards)
 
-    def hand_total(self, ace='low'):
-        return sum(card_value(self.cards, ace=ace))
+    def hand_total(self, ace_hi=False, face_num=False):
+        return sum(card_value(self.cards, ace_hi=ace_hi, face_num=face_num))
 
-    def hand_values(self, ace='low'):
-        return card_value(self.cards, ace=ace)
+    def hand_values(self, ace_hi=False, face_num=False):
+        return card_value(self.cards, ace_hi=ace_hi, face_num=face_num)
 
     def discard(self):
+        """Removes a card from the hand.
+
+        Prompts the user to input a card to be removed from the hand.
+        """
         card = card_loader()
         if card in self.cards:
             self.cards.remove(card)
@@ -86,6 +112,14 @@ class Hand:
             print("Card not in hand.")
 
     def play_cards(self, num):
+        """Allows the hand to play from existing cards.
+
+        Prompts the user to input a certain number of cards to be played.
+        Like discard, removes from hand, but unlike discard, returns all cards played at once.
+
+        :param num: The number of cards to be played.
+        :return: The cards played.
+        """
         plays = []
         for i in range(num):
             card = card_loader()
@@ -97,24 +131,32 @@ class Hand:
         return plays
 
     def get_combinations(self, num):
+        """Returns all combinations of hand's cards.
+
+        Returns all possible combinations in groups of a specified number.
+        Useful for evaluating scores of sub-hands, as in poker.
+
+        :param num: The number of cards in the sub-group. Cannot be greater than the number of cards in the hand.
+        :return: A list of all hand combinations of the specified length.
+        """
         return [list(com) for com in itertools.combinations(self.cards, num)]
 
 
-def card_value(cards, ace='low'):
-    if ace == 'low':
+def card_value(cards, ace_hi=False, face_num=False):
+    if (ace_hi == False) and (face_num == False):
         val_dict = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
                     'T': 10, 'J': 10, 'Q': 10, 'K': 10}
-    elif ace == 'high':
+    elif (ace_hi == True) and (face_num == False):
         val_dict = {'A': 11, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
                     'T': 10, 'J': 10, 'Q': 10, 'K': 10}
-    elif ace == 'num':
+    elif (ace_hi == False) and (face_num == True):
         val_dict = {'A': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
                     'T': 10, 'J': 11, 'Q': 12, 'K': 13}
-    elif ace == 'num_high':
+    elif (ace_hi == True) and (face_num == True):
         val_dict = {'A': 14, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9,
                     'T': 10, 'J': 11, 'Q': 12, 'K': 13}
     else:
-        print(f"Invalid ace type: '{ace}'")
+        print(f"Invalid arguments.")
         return "Error"
 
     vals = []
